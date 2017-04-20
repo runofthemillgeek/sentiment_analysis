@@ -5,7 +5,7 @@ from twitter import TwitterClient
 
 app = Flask(__name__)
 # Setup the client <query string, retweets_only bool, with_sentiment bool>
-api = TwitterClient('@Sirajology')
+api = TwitterClient('Donald Trump')
 
 
 def strtobool(v):
@@ -14,7 +14,6 @@ def strtobool(v):
 
 @app.route('/')
 def index():
-
     return render_template('index.html')
 
 
@@ -26,6 +25,8 @@ def tweets():
         api.set_with_sentiment(strtobool(with_sentiment.lower()))
         query = request.args.get('query')
         api.set_query(query)
+        tweetcount = int(request.args.get('tweetcount'))
+        api.set_tweetcount(tweetcount)
 
         tweets = api.get_tweets()
         print("{} tweets".format(len(tweets)))

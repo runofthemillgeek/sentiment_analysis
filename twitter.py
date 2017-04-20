@@ -38,6 +38,9 @@ class TwitterClient(object):
     def set_with_sentiment(self, with_sentiment='false'):
         self.with_sentiment = with_sentiment
 
+    def set_tweetcount(self, count=100):
+        self.tweetcount = count
+
     def clean_tweet(self, tweet):
         return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
 
@@ -54,12 +57,24 @@ class TwitterClient(object):
         tweets = []
 
         try:
-            recd_tweets = self.api.search(q=self.query,
-                                          count=self.tweet_count_max)
-            maxId = recd_tweets[-1].id
-            for pgno in range(10):
-                nxtpg_recd_tweets = self.api.search(q=self.query, count=self.tweet_count_max, max_id=str(maxId - 1))
-                recd_tweets = recd_tweets + nxtpg_recd_tweets
+            # how many groups of `tweet_count_max` tweets
+            no_of_100tweets = self.tweetcount // self.tweet_count_max
+            # how many do not belong in a `tweet_count_max` group
+            no_of_remaining_tweets = self.tweetcount - self.tweet_count_max * no_of_100tweets
+            
+            if no_of_remaining_tweets:
+                recd_tweets = self.api.search(q=self.query, count=no_of_remaining_tweets)
+            else:
+                recd_tweets = []
+
+            maxId = recd_tweets[-1].id if recd_tweets else 0
+
+            for _ in range(no_of_100tweets):
+                nxtpg_recd_tweets = self.api.search(
+                    q=self.query,
+                    count=self.tweet_count_max,
+                    max_id=str(maxId - 1))
+                recd_tweets.extend(nxtpg_recd_tweets)
                 maxId = nxtpg_recd_tweets[-1].id
 
             if not recd_tweets:
